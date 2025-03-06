@@ -16,10 +16,11 @@ const Login = () => {
     <form className="login" onSubmit={handleSubmit}>
       <input
         type="text"
-        placeholder="Usuario"
+        placeholder="Usuario (iniciales)"
         value={username}
         onChange={(e) => setUsername(e.target.value)}
         className="login__input login__input--user"
+        maxLength={4}
       />
       <input
         type="password"
