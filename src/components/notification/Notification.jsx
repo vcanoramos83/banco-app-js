@@ -1,20 +1,25 @@
 import { useEffect } from 'react';
+import { useAccount } from '../../context/AccountContext';
 import './Notification.css';
 
-function Notification({ message, type, onClose }) {
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose();
-    }, 3000);
+export default function Notification() {
+  const { notification, hideNotification } = useAccount();
 
-    return () => clearTimeout(timer);
-  }, [onClose]);
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        hideNotification();
+      }, 3000); // 3 segundos exactos
+
+      return () => clearTimeout(timer);
+    }
+  }, [notification, hideNotification]);
+
+  if (!notification) return null;
 
   return (
-    <div className={`notification notification--${type}`}>
-      {message}
+    <div className={`notification notification--${notification.type}`}>
+      <p>{notification.message}</p>
     </div>
   );
 }
-
-export default Notification;

@@ -1,62 +1,61 @@
 import { useState } from 'react';
 import { useAccount } from '../../context/AccountContext';
 import moment from 'moment';
+import 'moment/locale/es';
 import './Movements.css';
 
-function Movements() {
+moment.locale('es');
+
+export default function Movements() {
   const { currentAccount } = useAccount();
-  const [sortByDate, setSortByDate] = useState('desc');
+  const [sortOrder, setSortOrder] = useState('desc');
 
-  const formatDate = (date) => {
-    return moment(date).fromNow();
+  const formatMovementDate = (date) => {
+    const now = moment();
+    const movementDate = moment(date);
+    const days = now.diff(movementDate, 'days');
+
+    if (days === 0) return 'Hoy';
+    if (days === 1) return 'Ayer';
+    if (days <= 7) return `Hace ${days} días`;
+    return movementDate.format('D [de] MMMM[,] YYYY');
   };
 
-  const getSortedMovements = () => {
-    if (!currentAccount?.movements?.length) return [];
-    
-    return [...currentAccount.movements].sort((a, b) => {
-      const dateA = new Date(a.date);
-      const dateB = new Date(b.date);
-      return sortByDate === 'desc' ? dateB - dateA : dateA - dateB;
-    });
+  const handleSort = () => {
+    setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
   };
 
-  const handleSortChange = () => {
-    setSortByDate(prev => prev === 'desc' ? 'asc' : 'desc');
-  };
+  if (!currentAccount) return null;
 
-  if (!currentAccount) {
-    return (
-      <div className="movements">
-        <div className="movements__row">
-          <p>Please log in to view movements</p>
-        </div>
-      </div>
-    );
-  }
+  const sortedMovements = [...currentAccount.movements].sort((a, b) => {
+    const dateA = new Date(a.date);
+    const dateB = new Date(b.date);
+    return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+  });
 
   return (
     <div className="movements">
       <div className="movements__header">
-        <h2>Movements</h2>
+        <h2>Movimientos</h2>
         <button 
-          onClick={handleSortChange}
-          className={`sort-button ${sortByDate === 'desc' ? 'sort-button--desc' : 'sort-button--asc'}`}
+          onClick={handleSort} 
+          className={`sort-button sort-button--${sortOrder}`}
         >
-          {sortByDate === 'desc' ? '↓ Newest first' : '↑ Oldest first'}
+          {sortOrder === 'desc' ? '↓ Más recientes' : '↑ Más antiguos'}
         </button>
       </div>
-      {getSortedMovements().map((movement, index) => (
-        <div key={index} className="movements__row">
-          <div className={`movements__type movements__type--${movement.amount > 0 ? 'deposit' : 'withdrawal'}`}>
-            {movement.amount > 0 ? 'deposit' : 'withdrawal'}
+      <div className="movements__container">
+        {sortedMovements.map((mov, i) => (
+          <div className="movements__row" key={i}>
+            <div className={`movements__type movements__type--${mov.amount > 0 ? 'deposit' : 'withdrawal'}`}>
+              {mov.amount > 0 ? 'ingreso' : 'retiro'}
+            </div>
+            <div className="movements__description">{mov.description}</div>
+            <div className="movements__date">{formatMovementDate(mov.date)}</div>
+            <div className="movements__value">{Math.abs(mov.amount).toFixed(2)}€</div>
           </div>
-          <div className="movements__date">{formatDate(movement.date)}</div>
-          <div className="movements__value">{movement.amount.toFixed(2)}€</div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
-
-export default Movements;

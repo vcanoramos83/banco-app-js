@@ -1,18 +1,50 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { faker } from '@faker-js/faker';
 
 const AccountContext = createContext();
 
+const generateInitials = (fullName) => {
+  const names = fullName.split(' ');
+  if (names.length >= 2) {
+    return (names[0][0] + names[names.length - 1][0]).toLowerCase();
+  }
+  return fullName.substring(0, 2).toLowerCase();
+};
+
+const generateRandomMovement = () => {
+  const isDeposit = faker.datatype.boolean();
+  const amount = faker.number.float({ min: 100, max: 2000, precision: 0.01 });
+  
+  const descriptions = [
+    'Nómina',
+    'Transferencia recibida',
+    'Pago recibido',
+    'Depósito en efectivo',
+    'Pago de factura',
+    'Transferencia enviada',
+    'Compra con tarjeta',
+    'Retiro en cajero'
+  ];
+  
+  return {
+    amount: isDeposit ? amount : -amount,
+    date: faker.date.past({ years: 1 }).toISOString(),
+    description: descriptions[faker.number.int({ min: 0, max: descriptions.length - 1 })]
+  };
+};
+
 const generateRandomAccount = () => {
-  const movements = Array.from({ length: faker.number.int({ min: 3, max: 8 }) }, () => ({
-    amount: faker.number.float({ min: -1000, max: 2000, precision: 0.01 }),
-    date: faker.date.past({ years: 1 }).toISOString()
-  }));
+  const fullName = faker.person.fullName();
+  const movements = Array.from(
+    { length: faker.number.int({ min: 3, max: 8 }) }, 
+    generateRandomMovement
+  );
 
   const balance = movements.reduce((acc, mov) => acc + mov.amount, 0);
 
   return {
-    owner: faker.person.fullName(),
+    owner: fullName,
+    username: generateInitials(fullName),
     pin: faker.string.numeric(4),
     movements,
     balance,
@@ -24,8 +56,15 @@ export function AccountProvider({ children }) {
   const [accounts, setAccounts] = useState([
     {
       owner: 'Juan Daniel',
+      username: 'jd',
       pin: '1111',
-      movements: [],
+      movements: [
+        {
+          amount: 1000,
+          date: new Date().toISOString(),
+          description: 'Saldo inicial'
+        }
+      ],
       balance: 1000,
       active: true
     },
@@ -33,6 +72,16 @@ export function AccountProvider({ children }) {
     generateRandomAccount(),
     generateRandomAccount()
   ]);
+
+  // Mostrar las cuentas en la consola
+  useEffect(() => {
+    console.log('Cuentas disponibles:');
+    accounts.forEach(account => {
+      if (account.active) {
+        console.log(`Usuario: ${account.owner} (${account.username}), PIN: ${account.pin}, Balance: ${account.balance.toFixed(2)}€`);
+      }
+    });
+  }, [accounts]);
 
   const [currentAccount, setCurrentAccount] = useState(null);
   const [notification, setNotification] = useState(null);
@@ -45,102 +94,164 @@ export function AccountProvider({ children }) {
     setNotification(null);
   };
 
-  const addMovement = (accountIndex, amount) => {
-    const movement = {
-      amount,
-      date: new Date().toISOString(),
-    };
-    
+  const addMovement = (accountIndex, amount, description = '') => {
     const updatedAccounts = [...accounts];
     updatedAccounts[accountIndex] = {
       ...updatedAccounts[accountIndex],
-      movements: [...updatedAccounts[accountIndex].movements, movement],
+      movements: [
+        ...updatedAccounts[accountIndex].movements,
+        {
+          amount,
+          date: new Date().toISOString(),
+          description
+        }
+      ],
       balance: updatedAccounts[accountIndex].balance + amount
     };
-    
     return updatedAccounts;
+  };
+
+  const transfer = (receiverUsername, amount) => {
+    if (!currentAccount) {
+      showNotification('Por favor, inicia sesión primero', 'error');
+      throw new Error('Por favor, inicia sesión primero');
+    }
+
+    const numAmount = Number(amount);
+    if (numAmount <= 0) {
+      showNotification('El importe debe ser positivo', 'error');
+      throw new Error('El importe debe ser positivo');
+    }
+
+    if (numAmount > currentAccount.balance) {
+      showNotification('Saldo insuficiente', 'error');
+      throw new Error('Saldo insuficiente');
+    }
+
+    const receiverIndex = accounts.findIndex(
+      acc => acc.username === receiverUsername && acc.active
+    );
+
+    if (receiverIndex === -1) {
+      showNotification('Cuenta no encontrada', 'error');
+      throw new Error('Cuenta no encontrada');
+    }
+
+    const senderIndex = accounts.findIndex(acc => acc.username === currentAccount.username);
+
+    // Primero actualizamos la cuenta del remitente (resta)
+    let updatedAccounts = [...accounts];
+    updatedAccounts[senderIndex] = {
+      ...updatedAccounts[senderIndex],
+      movements: [
+        ...updatedAccounts[senderIndex].movements,
+        {
+          amount: -numAmount,
+          date: new Date().toISOString(),
+          description: `Transferencia enviada a ${accounts[receiverIndex].owner}`
+        }
+      ],
+      balance: updatedAccounts[senderIndex].balance - numAmount
+    };
+
+    // Luego actualizamos la cuenta del destinatario (suma)
+    updatedAccounts[receiverIndex] = {
+      ...updatedAccounts[receiverIndex],
+      movements: [
+        ...updatedAccounts[receiverIndex].movements,
+        {
+          amount: numAmount,
+          date: new Date().toISOString(),
+          description: `Transferencia recibida de ${currentAccount.owner}`
+        }
+      ],
+      balance: updatedAccounts[receiverIndex].balance + numAmount
+    };
+
+    setAccounts(updatedAccounts);
+    setCurrentAccount(updatedAccounts[senderIndex]);
+    
+    showNotification(
+      `Transferencia de ${numAmount.toFixed(2)}€ realizada`, 
+      'success'
+    );
   };
 
   const closeAccount = (username, pin) => {
     const accountIndex = accounts.findIndex(
-      acc => acc.owner === username && acc.pin === pin && acc.active
+      acc => acc.username === username && acc.pin === pin && acc.active
     );
     
     if (accountIndex === -1) {
-      showNotification('Invalid credentials or account already closed', 'error');
-      throw new Error('Invalid credentials or account already closed');
+      showNotification('Credenciales inválidas o cuenta ya cerrada', 'error');
+      throw new Error('Credenciales inválidas o cuenta ya cerrada');
     }
 
     const updatedAccounts = [...accounts];
     updatedAccounts[accountIndex] = {
       ...updatedAccounts[accountIndex],
-      active: false
+      active: false,
+      movements: [
+        ...updatedAccounts[accountIndex].movements,
+        {
+          amount: -updatedAccounts[accountIndex].balance,
+          date: new Date().toISOString(),
+          description: 'Cierre de cuenta'
+        }
+      ],
+      balance: 0
     };
     
     setAccounts(updatedAccounts);
     setCurrentAccount(null);
-    showNotification('Account closed successfully', 'success');
-  };
-
-  const transfer = (receiverName, amount) => {
-    if (!currentAccount) {
-      showNotification('Please log in first', 'error');
-      throw new Error('Please log in first');
-    }
-
-    if (amount <= 0) {
-      showNotification('Transfer amount must be positive', 'error');
-      throw new Error('Transfer amount must be positive');
-    }
-
-    if (amount > currentAccount.balance) {
-      showNotification('Insufficient funds', 'error');
-      throw new Error('Insufficient funds');
-    }
-
-    const receiverIndex = accounts.findIndex(
-      acc => acc.owner === receiverName && acc.active
-    );
-
-    if (receiverIndex === -1) {
-      showNotification('Receiver account not found or inactive', 'error');
-      throw new Error('Receiver account not found or inactive');
-    }
-
-    const senderIndex = accounts.findIndex(acc => acc.owner === currentAccount.owner);
-    
-    // Update both accounts with movements
-    let updatedAccounts = addMovement(senderIndex, -amount);
-    updatedAccounts = addMovement(receiverIndex, amount);
-
-    setAccounts(updatedAccounts);
-    setCurrentAccount(updatedAccounts[senderIndex]);
-    showNotification(`Successfully transferred ${amount}€ to ${receiverName}`, 'success');
+    showNotification('Cuenta cerrada exitosamente. ¡Hasta pronto!', 'success');
   };
 
   const requestLoan = (amount) => {
     if (!currentAccount) {
-      showNotification('Please log in first', 'error');
-      throw new Error('Please log in first');
+      showNotification('Por favor, inicia sesión primero', 'error');
+      throw new Error('Por favor, inicia sesión primero');
     }
 
-    if (amount <= 0) {
-      showNotification('Loan amount must be positive', 'error');
-      throw new Error('Loan amount must be positive');
+    const numAmount = Number(amount);
+    if (numAmount <= 0) {
+      showNotification('El importe debe ser positivo', 'error');
+      throw new Error('El importe debe ser positivo');
     }
 
     const maxLoanAmount = currentAccount.balance * 2;
-    if (amount > maxLoanAmount) {
-      showNotification(`Maximum loan amount is ${maxLoanAmount}€ (200% of your balance)`, 'error');
-      throw new Error(`Maximum loan amount is ${maxLoanAmount} (200% of your balance)`);
+    if (numAmount > maxLoanAmount) {
+      showNotification(
+        `Préstamo máximo: ${maxLoanAmount.toFixed(2)}€`, 
+        'error'
+      );
+      throw new Error(`Préstamo máximo: ${maxLoanAmount}`);
     }
 
-    const accountIndex = accounts.findIndex(acc => acc.owner === currentAccount.owner);
-    const updatedAccounts = addMovement(accountIndex, amount);
+    const accountIndex = accounts.findIndex(acc => acc.username === currentAccount.username);
+    const updatedAccounts = addMovement(accountIndex, numAmount, 'Préstamo aprobado');
 
     setAccounts(updatedAccounts);
     setCurrentAccount(updatedAccounts[accountIndex]);
-    showNotification(`Loan approved! ${amount}€ has been deposited to your account`, 'success');
+    
+    showNotification(
+      `Préstamo de ${numAmount.toFixed(2)}€ aprobado`, 
+      'success'
+    );
+  };
+
+  const login = (username, pin) => {
+    const account = accounts.find(
+      acc => acc.username === username.toLowerCase() && acc.pin === pin && acc.active
+    );
+
+    if (account) {
+      setCurrentAccount(account);
+      showNotification(`¡Bienvenido/a ${account.owner}!`, 'success');
+      return true;
+    }
+    showNotification('Usuario o PIN inválido', 'error');
+    return false;
   };
 
   const value = {
@@ -152,7 +263,8 @@ export function AccountProvider({ children }) {
     transfer,
     requestLoan,
     notification,
-    hideNotification
+    hideNotification,
+    login
   };
 
   return (

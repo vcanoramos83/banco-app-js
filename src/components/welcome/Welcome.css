@@ -3,6 +3,12 @@
   font-weight: 500;
 }
 
+.welcome__message {
+  font-size: 1.2rem;
+  color: #333;
+  margin-bottom: 1rem;
+}
+
 .welcome__user {
   color: #66c873;
   font-weight: 600;

@@ -1,4 +1,4 @@
-import './App.css';
+import { useAccount } from './context/AccountContext';
 import Welcome from './components/welcome/Welcome';
 import Login from './components/login/Login';
 import Balance from './components/balance/Balance';
@@ -9,58 +9,37 @@ import Loan from './components/operations/Loan';
 import Close from './components/operations/Close';
 import LogoutTimer from './components/logout-timer/LogoutTimer';
 import Notification from './components/notification/Notification';
-import { AccountProvider, useAccount } from './context/AccountContext';
+import './App.css';
 
-function AppContent() {
-  const { notification, hideNotification } = useAccount();
+function App() {
+  const { currentAccount, notification } = useAccount();
 
   return (
     <>
       <nav>
         <Welcome />
-        <img src="logo.png" alt="Logo" className="logo" />
         <Login />
       </nav>
 
-      <main className="app">
-        {/* BALANCE */}
-        <Balance />
-
-        {/* MOVEMENTS */}
-        <Movements />
-
-        {/* SUMMARY */}
-        <Summary />
-
-        {/* OPERATION: TRANSFERS */}
-        <Transfer />
-
-        {/* OPERATION: LOAN */}
-        <Loan />
-
-        {/* OPERATION: CLOSE */}
-        <Close />
-
-        {/* TIMER */}
-        <LogoutTimer />
-      </main>
+      {currentAccount && (
+        <main className="app">
+          <Balance />
+          <Movements />
+          <Summary />
+          <Transfer />
+          <Loan />
+          <Close />
+          <LogoutTimer />
+        </main>
+      )}
 
       {notification && (
         <Notification
           message={notification.message}
           type={notification.type}
-          onClose={hideNotification}
         />
       )}
     </>
-  );
-}
-
-function App() {
-  return (
-    <AccountProvider>
-      <AppContent />
-    </AccountProvider>
   );
 }
 

@@ -1,20 +1,16 @@
 import { useAccount } from '../../context/AccountContext';
 import './Welcome.css';
 
-function Welcome() {
+const Welcome = () => {
   const { currentAccount } = useAccount();
 
   return (
     <p className="welcome">
-      {currentAccount ? (
-        <>
-          Welcome back, <span className="welcome__user">{currentAccount.owner}</span>
-        </>
-      ) : (
-        'Log in to get started'
-      )}
+      {currentAccount
+        ? `Bienvenido/a, ${currentAccount.owner}`
+        : 'Inicia sesión para comenzar'}
     </p>
   );
-}
+};
 
 export default Welcome;
