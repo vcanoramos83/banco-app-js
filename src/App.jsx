@@ -1,9 +1,48 @@
+import './App.css';
+import Welcome from './components/welcome/Welcome';
+import Login from './components/login/Login';
+import Balance from './components/balance/Balance';
+import Movements from './components/movements/Movements';
+import Summary from './components/summary/Summary';
+import Transfer from './components/operations/Transfer';
+import Loan from './components/operations/Loan';
+import Close from './components/operations/Close';
+import LogoutTimer from './components/logout-timer/LogoutTimer';
+import { AccountProvider } from './context/AccountContext';
+
 function App() {
   return (
-    <div>
-      <h1>Hola mundo</h1>
-    </div>
-  )
+    <AccountProvider>
+      <nav>
+        <Welcome />
+        <img src="logo.png" alt="Logo" className="logo" />
+        <Login />
+      </nav>
+
+      <main className="app">
+        {/* BALANCE */}
+        <Balance />
+
+        {/* MOVEMENTS */}
+        <Movements />
+
+        {/* SUMMARY */}
+        <Summary />
+
+        {/* OPERATION: TRANSFERS */}
+        <Transfer />
+
+        {/* OPERATION: LOAN */}
+        <Loan />
+
+        {/* OPERATION: CLOSE */}
+        <Close />
+
+        {/* TIMER */}
+        <LogoutTimer />
+      </main>
+    </AccountProvider>
+  );
 }
 
-export default App
+export default App;
