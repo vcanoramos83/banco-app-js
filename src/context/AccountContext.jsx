@@ -1,6 +1,24 @@
 import { createContext, useContext, useState } from 'react';
+import { faker } from '@faker-js/faker';
 
 const AccountContext = createContext();
+
+const generateRandomAccount = () => {
+  const movements = Array.from({ length: faker.number.int({ min: 3, max: 8 }) }, () => ({
+    amount: faker.number.float({ min: -1000, max: 2000, precision: 0.01 }),
+    date: faker.date.past({ years: 1 }).toISOString()
+  }));
+
+  const balance = movements.reduce((acc, mov) => acc + mov.amount, 0);
+
+  return {
+    owner: faker.person.fullName(),
+    pin: faker.string.numeric(4),
+    movements,
+    balance,
+    active: true
+  };
+};
 
 export function AccountProvider({ children }) {
   const [accounts, setAccounts] = useState([
@@ -10,7 +28,10 @@ export function AccountProvider({ children }) {
       movements: [],
       balance: 1000,
       active: true
-    }
+    },
+    generateRandomAccount(),
+    generateRandomAccount(),
+    generateRandomAccount()
   ]);
 
   const [currentAccount, setCurrentAccount] = useState(null);
