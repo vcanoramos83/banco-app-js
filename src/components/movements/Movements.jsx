@@ -39,8 +39,11 @@ function Movements() {
     <div className="movements">
       <div className="movements__header">
         <h2>Movements</h2>
-        <button onClick={handleSortChange}>
-          Sort by date ({sortByDate === 'desc' ? 'Newest first' : 'Oldest first'})
+        <button 
+          onClick={handleSortChange}
+          className={`sort-button ${sortByDate === 'desc' ? 'sort-button--desc' : 'sort-button--asc'}`}
+        >
+          {sortByDate === 'desc' ? '↓ Newest first' : '↑ Oldest first'}
         </button>
       </div>
       {getSortedMovements().map((movement, index) => (
@@ -49,7 +52,7 @@ function Movements() {
             {movement.amount > 0 ? 'deposit' : 'withdrawal'}
           </div>
           <div className="movements__date">{formatDate(movement.date)}</div>
-          <div className="movements__value">{movement.amount}€</div>
+          <div className="movements__value">{movement.amount.toFixed(2)}€</div>
         </div>
       ))}
     </div>

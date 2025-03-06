@@ -13,18 +13,28 @@
   border-bottom: 1px solid #eee;
 }
 
-.movements__header button {
+.sort-button {
   font-size: 1.1rem;
   font-weight: 500;
   cursor: pointer;
-  background: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
   border: none;
-  color: #666;
   transition: all 0.3s;
 }
 
-.movements__header button:hover {
-  color: #333;
+.sort-button--desc {
+  background: linear-gradient(to top left, #39b385, #9be15d);
+  color: #fff;
+}
+
+.sort-button--asc {
+  background: linear-gradient(to top left, #ffb003, #ffcb03);
+  color: #fff;
+}
+
+.sort-button:hover {
+  transform: scale(1.05);
 }
 
 .movements__row {

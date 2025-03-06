@@ -35,6 +35,15 @@ export function AccountProvider({ children }) {
   ]);
 
   const [currentAccount, setCurrentAccount] = useState(null);
+  const [notification, setNotification] = useState(null);
+
+  const showNotification = (message, type) => {
+    setNotification({ message, type });
+  };
+
+  const hideNotification = () => {
+    setNotification(null);
+  };
 
   const addMovement = (accountIndex, amount) => {
     const movement = {
@@ -58,6 +67,7 @@ export function AccountProvider({ children }) {
     );
     
     if (accountIndex === -1) {
+      showNotification('Invalid credentials or account already closed', 'error');
       throw new Error('Invalid credentials or account already closed');
     }
 
@@ -69,18 +79,22 @@ export function AccountProvider({ children }) {
     
     setAccounts(updatedAccounts);
     setCurrentAccount(null);
+    showNotification('Account closed successfully', 'success');
   };
 
   const transfer = (receiverName, amount) => {
     if (!currentAccount) {
+      showNotification('Please log in first', 'error');
       throw new Error('Please log in first');
     }
 
     if (amount <= 0) {
+      showNotification('Transfer amount must be positive', 'error');
       throw new Error('Transfer amount must be positive');
     }
 
     if (amount > currentAccount.balance) {
+      showNotification('Insufficient funds', 'error');
       throw new Error('Insufficient funds');
     }
 
@@ -89,6 +103,7 @@ export function AccountProvider({ children }) {
     );
 
     if (receiverIndex === -1) {
+      showNotification('Receiver account not found or inactive', 'error');
       throw new Error('Receiver account not found or inactive');
     }
 
@@ -100,19 +115,23 @@ export function AccountProvider({ children }) {
 
     setAccounts(updatedAccounts);
     setCurrentAccount(updatedAccounts[senderIndex]);
+    showNotification(`Successfully transferred ${amount}€ to ${receiverName}`, 'success');
   };
 
   const requestLoan = (amount) => {
     if (!currentAccount) {
+      showNotification('Please log in first', 'error');
       throw new Error('Please log in first');
     }
 
     if (amount <= 0) {
+      showNotification('Loan amount must be positive', 'error');
       throw new Error('Loan amount must be positive');
     }
 
     const maxLoanAmount = currentAccount.balance * 2;
     if (amount > maxLoanAmount) {
+      showNotification(`Maximum loan amount is ${maxLoanAmount}€ (200% of your balance)`, 'error');
       throw new Error(`Maximum loan amount is ${maxLoanAmount} (200% of your balance)`);
     }
 
@@ -121,6 +140,7 @@ export function AccountProvider({ children }) {
 
     setAccounts(updatedAccounts);
     setCurrentAccount(updatedAccounts[accountIndex]);
+    showNotification(`Loan approved! ${amount}€ has been deposited to your account`, 'success');
   };
 
   const value = {
@@ -130,7 +150,9 @@ export function AccountProvider({ children }) {
     setCurrentAccount,
     closeAccount,
     transfer,
-    requestLoan
+    requestLoan,
+    notification,
+    hideNotification
   };
 
   return (

@@ -8,11 +8,14 @@ import Transfer from './components/operations/Transfer';
 import Loan from './components/operations/Loan';
 import Close from './components/operations/Close';
 import LogoutTimer from './components/logout-timer/LogoutTimer';
-import { AccountProvider } from './context/AccountContext';
+import Notification from './components/notification/Notification';
+import { AccountProvider, useAccount } from './context/AccountContext';
 
-function App() {
+function AppContent() {
+  const { notification, hideNotification } = useAccount();
+
   return (
-    <AccountProvider>
+    <>
       <nav>
         <Welcome />
         <img src="logo.png" alt="Logo" className="logo" />
@@ -41,6 +44,22 @@ function App() {
         {/* TIMER */}
         <LogoutTimer />
       </main>
+
+      {notification && (
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onClose={hideNotification}
+        />
+      )}
+    </>
+  );
+}
+
+function App() {
+  return (
+    <AccountProvider>
+      <AppContent />
     </AccountProvider>
   );
 }
