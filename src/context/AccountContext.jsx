@@ -219,6 +219,19 @@ export function AccountProvider({ children }) {
       throw new Error('El importe debe ser positivo');
     }
 
+    // Verificar si hay algún depósito que sea al menos el 10% del préstamo solicitado
+    const hasQualifyingDeposit = currentAccount.movements.some(
+      mov => mov.amount > 0 && mov.amount >= numAmount * 0.1
+    );
+
+    if (!hasQualifyingDeposit) {
+      showNotification(
+        `Necesitas al menos un depósito del ${(numAmount * 0.1).toFixed(2)}€ para este préstamo`, 
+        'error'
+      );
+      throw new Error('No cumple requisitos de depósito previo');
+    }
+
     const maxLoanAmount = currentAccount.balance * 2;
     if (numAmount > maxLoanAmount) {
       showNotification(
