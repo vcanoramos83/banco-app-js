@@ -76,13 +76,41 @@ export function AccountProvider({ children }) {
     setCurrentAccount(updatedAccounts[senderIndex]);
   };
 
+  const requestLoan = (amount) => {
+    if (!currentAccount) {
+      throw new Error('Please log in first');
+    }
+
+    if (amount <= 0) {
+      throw new Error('Loan amount must be positive');
+    }
+
+    const maxLoanAmount = currentAccount.balance * 2;
+    if (amount > maxLoanAmount) {
+      throw new Error(`Maximum loan amount is ${maxLoanAmount} (200% of your balance)`);
+    }
+
+    const accountIndex = accounts.findIndex(acc => acc.owner === currentAccount.owner);
+    const updatedAccounts = [...accounts];
+    
+    updatedAccounts[accountIndex] = {
+      ...updatedAccounts[accountIndex],
+      movements: [...updatedAccounts[accountIndex].movements, amount],
+      balance: updatedAccounts[accountIndex].balance + amount
+    };
+
+    setAccounts(updatedAccounts);
+    setCurrentAccount(updatedAccounts[accountIndex]);
+  };
+
   const value = {
     accounts,
     setAccounts,
     currentAccount,
     setCurrentAccount,
     closeAccount,
-    transfer
+    transfer,
+    requestLoan
   };
 
   return (
