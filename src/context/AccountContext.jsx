@@ -15,6 +15,22 @@ export function AccountProvider({ children }) {
 
   const [currentAccount, setCurrentAccount] = useState(null);
 
+  const addMovement = (accountIndex, amount) => {
+    const movement = {
+      amount,
+      date: new Date().toISOString(),
+    };
+    
+    const updatedAccounts = [...accounts];
+    updatedAccounts[accountIndex] = {
+      ...updatedAccounts[accountIndex],
+      movements: [...updatedAccounts[accountIndex].movements, movement],
+      balance: updatedAccounts[accountIndex].balance + amount
+    };
+    
+    return updatedAccounts;
+  };
+
   const closeAccount = (username, pin) => {
     const accountIndex = accounts.findIndex(
       acc => acc.owner === username && acc.pin === pin && acc.active
@@ -55,22 +71,11 @@ export function AccountProvider({ children }) {
       throw new Error('Receiver account not found or inactive');
     }
 
-    const updatedAccounts = [...accounts];
     const senderIndex = accounts.findIndex(acc => acc.owner === currentAccount.owner);
-
-    // Update sender's account
-    updatedAccounts[senderIndex] = {
-      ...updatedAccounts[senderIndex],
-      movements: [...updatedAccounts[senderIndex].movements, -amount],
-      balance: updatedAccounts[senderIndex].balance - amount
-    };
-
-    // Update receiver's account
-    updatedAccounts[receiverIndex] = {
-      ...updatedAccounts[receiverIndex],
-      movements: [...updatedAccounts[receiverIndex].movements, amount],
-      balance: updatedAccounts[receiverIndex].balance + amount
-    };
+    
+    // Update both accounts with movements
+    let updatedAccounts = addMovement(senderIndex, -amount);
+    updatedAccounts = addMovement(receiverIndex, amount);
 
     setAccounts(updatedAccounts);
     setCurrentAccount(updatedAccounts[senderIndex]);
@@ -91,13 +96,7 @@ export function AccountProvider({ children }) {
     }
 
     const accountIndex = accounts.findIndex(acc => acc.owner === currentAccount.owner);
-    const updatedAccounts = [...accounts];
-    
-    updatedAccounts[accountIndex] = {
-      ...updatedAccounts[accountIndex],
-      movements: [...updatedAccounts[accountIndex].movements, amount],
-      balance: updatedAccounts[accountIndex].balance + amount
-    };
+    const updatedAccounts = addMovement(accountIndex, amount);
 
     setAccounts(updatedAccounts);
     setCurrentAccount(updatedAccounts[accountIndex]);
