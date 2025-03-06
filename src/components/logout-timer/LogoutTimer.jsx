@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { useAccount } from '../../context/AccountContext';
 import './LogoutTimer.css';
 
-function LogoutTimer() {
+export default function LogoutTimer() {
   const { currentAccount, setCurrentAccount } = useAccount();
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
+  const [isWarning, setIsWarning] = useState(false);
 
   useEffect(() => {
     if (!currentAccount) {
@@ -19,12 +20,17 @@ function LogoutTimer() {
           setCurrentAccount(null);
           return 300;
         }
+        // Activar advertencia cuando quedan 60 segundos
+        if (prev === 60) {
+          setIsWarning(true);
+        }
         return prev - 1;
       });
     }, 1000);
 
     const resetTimer = () => {
       setTimeLeft(300);
+      setIsWarning(false);
     };
 
     // Reset timer on user activity
@@ -37,6 +43,7 @@ function LogoutTimer() {
       window.removeEventListener('userActivity', resetTimer);
       window.removeEventListener('mousemove', resetTimer);
       window.removeEventListener('keypress', resetTimer);
+      setIsWarning(false);
     };
   }, [currentAccount, setCurrentAccount]);
 
@@ -49,10 +56,9 @@ function LogoutTimer() {
   if (!currentAccount) return null;
 
   return (
-    <div className="timer">
+    <div className={`timer ${isWarning ? 'timer--warning' : ''}`}>
+      {isWarning && <span className="timer__warning">¡Sesión por expirar! </span>}
       You will be logged out in <span>{formatTime(timeLeft)}</span>
     </div>
   );
 }
-
-export default LogoutTimer;
