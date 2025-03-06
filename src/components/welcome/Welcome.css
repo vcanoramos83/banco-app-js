@@ -1,0 +1,10 @@
+.welcome {
+  font-size: 1.9rem;
+  font-weight: 500;
+}
+
+.welcome__user {
+  color: #66c873;
+  font-weight: 600;
+  text-decoration: underline;
+}
